@@ -5,9 +5,10 @@ A JScript for Windows (Windows Script Host) that converts Adblock lists to the P
 
 Based on code by Andrwe Lord Weber found [here](http://andrwe.org/scripting/bash/privoxy-blocklist), as modified for OS X by [skroll](https://github.com/skroll/privoxy-adblock).
 
-This script is modified to work in Windows Script Host and may not require Admin privileges; it is recommended to make a Scheduled Task running this script periodically (about once per week, the same frequency at which Adblock Plus itself updates lists by default).
+This script is modified to work with the Windows Script Host and requires Admin privileges if you've kept the defaults (an installed copy of Privoxy, with configuration files in its installation directory); it is recommended to make a Scheduled Task running this script periodically (about once per week, the same frequency at which Adblock Plus itself updates lists by default).
 
-**Note:** This script requires `wget` and `sed` to be installed on the system; get them as part of [GnuWin32](http://getgnuwin32.sourceforge.net/) and be sure to add its bin directory (by default `C:\Gnu32\bin`) to your PATH environment variable.
+**Note:** This script requires `sed` to be installed on the system; get it as part of [GnuWin32](http://getgnuwin32.sourceforge.net/) and be sure to add its bin directory (by default `C:\Gnu32\bin`) to your PATH environment variable.
+In a future update, the script may be rewritten to no longer rely on `sed`, just as it no longer relies on `wget`.
 
 Usage
 -----
