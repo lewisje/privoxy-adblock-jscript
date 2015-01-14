@@ -1,7 +1,7 @@
 /**
  * @fileOverview converting Adblock filter lists to Privoxy format.
  * @author <a href="lewisje@alumni.iu.edu">James Edward Lewis II</a>
- * @version 0.0.2
+ * @version 0.0.3
  */
 
 var v = new ActiveXObject('Shell.Application'),
@@ -19,14 +19,18 @@ var v = new ActiveXObject('Shell.Application'),
     'https://easylist-downloads.adblockplus.org/easylistgermany+easylist.txt',
     'https://easylist-downloads.adblockplus.org/malwaredomains_full.txt',
     'https://easylist-downloads.adblockplus.org/easyprivacy.txt',
+    'https://easylist-downloads.adblockplus.org/easyprivacy+easylist.txt',
     'https://easylist-downloads.adblockplus.org/antiadblockfilters.txt',
     'https://easylist-downloads.adblockplus.org/fb_annoyances_full.txt',
     'https://easylist-downloads.adblockplus.org/message_seen_remover_for_facebook.txt',
     'https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt',
     'https://easylist-downloads.adblockplus.org/fanboy-social.txt',
+    'https://secure.fanboy.co.nz/r/fanboy-complete.txt',
     'https://secure.fanboy.co.nz/r/fanboy-ultimate.txt',
-    'https://raw.github.com/r4vi/block-the-eu-cookie-shit-list/master/filterlist.txt',
-    'https://raw.github.com/liamja/Prebake/master/obtrusive.txt',
+    'https://secure.fanboy.co.nz/enhancedstats.txt',
+    'https://raw.githubusercontent.com/r4vi/block-the-eu-cookie-shit-list/master/filterlist.txt',
+    'https://raw.githubusercontent.com/liamja/Prebake/master/obtrusive.txt',
+    'https://raw.githubusercontent.com/reek/anti-adblock-killer/master/anti-adblock-killer-filters.txt',
     'https://lists.malwarepatrol.net/cgi/getfile?receipt=f1379438547&product=8&list=mozilla_adblock',
     'https://spam404bl.com/spam404scamlist.txt',
     'http://rickrolldb.com/ricklist.txt'];
@@ -129,41 +133,48 @@ function basename(path) {
 function doconvert(privoxydir, urls) {
   'use strict';
   var url, file, actionfile, actionfiledest, filterfile, filterfiledest, i, s,
-    acnm, ftnm, list, basenm, l = urls.length;
+    tfil, acnm, ftnm, list, basenm, hrt, l = urls.length;
   for (i = l; i > 0; i--) {
     url = urls[l - i];
     basenm = basename(url);
     list = basenm.replace(/\.[^.]*$/, '') || basenm;
     file = tmp + '\\'  + list + '.txt';
+    tfil = file + '.tmp';
     acnm = list + '.script.action';
     ftnm = list + '.script.filter';
     actionfile = tmp + '\\' + acnm;
     filterfile = tmp + '\\' + ftnm;
-
-    // clean up files
-    if (fso.FileExists(file)) fso.GetFile(file).Delete();
-    if (fso.FileExists(actionfile)) fso.GetFile(actionfile).Delete();
-    if (fso.FileExists(filterfile)) fso.GetFile(filterfile).Delete();
 
     testing && WScript.Echo('downloading ' + url + ' ...\n');
     http.open('GET', url, false);
     http.setRequestHeader('Accept','text/html');
     try {
       http.send();
-    } catch (e) {
-      continue;
+      if (fso.FileExists(tfil)) fso.GetFile(tfil).Delete();
+      if (hrt = http.responseText) s = fso.CreateTextFile(tfil, true);
+    } catch (e) { }
+    if (('' + s) && typeof hrt === 'string') {
+      s.Write(hrt);
+      s.Close();
+    } else {
+      if (typeof s === 'object') s.Close();
+      if (fso.FileExists(tfil)) fso.GetFile(tfil).Delete();
     }
+
     /* wget removed in favor of native solution, next up, factor out sed
     v.ShellExecute('wget', '-t 3 --no-check-certificate -0 "' + file + '" "' + url +
       '" > "' + tmp + '\\wget-' + url.replace(/\//g,'-') + '.log"', '', '', 0);*/
 
-    s = fso.CreateTextFile(file, true);
-    try {
-      s.Write(http.responseText);
-    } catch (e) {
-      continue;
+    // clean up files
+    if (fso.FileExists(tfil) && fso.FileExists(file)) {
+      fso.GetFile(file).Delete();
+      fso.MoveFile(tfil, file);
     }
-    s.Close();
+    fso.FileExists(actionfile) && fso.GetFile(actionfile).Delete();
+    fso.FileExists(filterfile) && fso.GetFile(filterfile).Delete();
+
+    if (!fso.FileExists(file)) continue;
+
     s = fso.OpenTextFile(file, 1);
     if (!s.ReadLine().match(/^.*\[Adblock.*\].*$/)) {
       testing && WScript.Echo('The list received from ' + url + ' isn\'t an Adblock list. (skipped)\n');
