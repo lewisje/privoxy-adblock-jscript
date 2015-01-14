@@ -1,7 +1,7 @@
 /**
  * @fileOverview converting Adblock filter lists to Privoxy format.
  * @author <a href="lewisje@alumni.iu.edu">James Edward Lewis II</a>
- * @version 0.0.1
+ * @version 0.0.2
  */
 
 var v = new ActiveXObject('Shell.Application'),
@@ -12,7 +12,24 @@ var v = new ActiveXObject('Shell.Application'),
   prg32 = env.ExpandEnvironmentStrings('%PROGRAMFILES(X86)%'),
   defaultprivoxydir = (fso.FolderExists(prg32) ? prg32 :
     env.ExpandEnvironmentStrings('%PROGRAMFILES%')) + '\\Privoxy',
-  defaulturls = ['https://easylist-downloads.adblockplus.org/easylist.txt'];
+  defaulturls = ['http://jansal.net/m.txt',
+    'http://pgl.yoyo.org/as/serverlist.php?hostformat=adblockplus&mimetype=plaintext',
+    'https://easylist-downloads.adblockplus.org/easylist.txt',
+    'https://easylist-downloads.adblockplus.org/easylist_noelemhide.txt',
+    'https://easylist-downloads.adblockplus.org/easylistgermany+easylist.txt',
+    'https://easylist-downloads.adblockplus.org/malwaredomains_full.txt',
+    'https://easylist-downloads.adblockplus.org/easyprivacy.txt',
+    'https://easylist-downloads.adblockplus.org/antiadblockfilters.txt',
+    'https://easylist-downloads.adblockplus.org/fb_annoyances_full.txt',
+    'https://easylist-downloads.adblockplus.org/message_seen_remover_for_facebook.txt',
+    'https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt',
+    'https://easylist-downloads.adblockplus.org/fanboy-social.txt',
+    'https://secure.fanboy.co.nz/r/fanboy-ultimate.txt',
+    'https://raw.github.com/r4vi/block-the-eu-cookie-shit-list/master/filterlist.txt',
+    'https://raw.github.com/liamja/Prebake/master/obtrusive.txt',
+    'https://lists.malwarepatrol.net/cgi/getfile?receipt=f1379438547&product=8&list=mozilla_adblock',
+    'https://spam404bl.com/spam404scamlist.txt',
+    'http://rickrolldb.com/ricklist.txt'];
 
 /**
  * Cleans up after script termination. (not currently implemented)
@@ -117,7 +134,7 @@ function doconvert(privoxydir, urls) {
     url = urls[l - i];
     basenm = basename(url);
     list = basenm.replace(/\.[^.]*$/, '') || basenm;
-    file = tmp + '\\'  + basenm;
+    file = tmp + '\\'  + list + '.txt';
     acnm = list + '.script.action';
     ftnm = list + '.script.filter';
     actionfile = tmp + '\\' + acnm;
@@ -131,13 +148,21 @@ function doconvert(privoxydir, urls) {
     testing && WScript.Echo('downloading ' + url + ' ...\n');
     http.open('GET', url, false);
     http.setRequestHeader('Accept','text/html');
-    http.send();
+    try {
+      http.send();
+    } catch (e) {
+      continue;
+    }
     /* wget removed in favor of native solution, next up, factor out sed
     v.ShellExecute('wget', '-t 3 --no-check-certificate -0 "' + file + '" "' + url +
       '" > "' + tmp + '\\wget-' + url.replace(/\//g,'-') + '.log"', '', '', 0);*/
 
     s = fso.CreateTextFile(file, true);
-    s.Write(http.responseText);
+    try {
+      s.Write(http.responseText);
+    } catch (e) {
+      continue;
+    }
     s.Close();
     s = fso.OpenTextFile(file, 1);
     if (!s.ReadLine().match(/^.*\[Adblock.*\].*$/)) {
@@ -222,7 +247,7 @@ function main() {
   for (i = l; i > 0; i--) {
     arg = objArgs[l - i];
     if (arg.charAt(0) !== '-') continue;
-    next = objArgs[l] || '';
+    next = objArgs[l - i + 1] || '';
     switch (arg) {
       case '-p':
         if (next.charAt(0) === '-') {
